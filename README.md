@@ -1,16 +1,16 @@
-# AGY Status
+# Antigravity Status
 
 > A live [Google Antigravity CLI (`agy`)](https://antigravity.google) status line for your terminal — context usage, cost, model, mode, sandbox, branch, worktree, and more.
 
-[![CI](https://github.com/antigravity-contrib/agy-status/actions/workflows/ci.yml/badge.svg)](https://github.com/antigravity-contrib/agy-status/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/antigravity-contrib/agy-status)](https://github.com/antigravity-contrib/agy-status/releases/latest)
+[![CI](https://github.com/antigravity-contrib/antigravity-status/actions/workflows/ci.yml/badge.svg)](https://github.com/antigravity-contrib/antigravity-status/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/antigravity-contrib/antigravity-status)](https://github.com/antigravity-contrib/antigravity-status/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-Antigravity CLI's `statusLine` command fires whenever agent state changes — piping a JSON payload of session telemetry to `stdin`. `agy-status` turns that stream into a compact, Catppuccin-colored status line matching [`claude-contrib/claude-status`](https://github.com/claude-contrib/claude-status).
+Antigravity CLI's `statusLine` command fires whenever agent state changes — piping a JSON payload of session telemetry to `stdin`. `antigravity-status` turns that stream into a compact, Catppuccin-colored status line matching [`claude-contrib/claude-status`](https://github.com/claude-contrib/claude-status).
 
 ## How It Works
 
-Antigravity CLI runs your configured `statusLine` command and pipes session state JSON to `stdin`. `agy-status` parses the payload with `jq` and renders each active segment using 24-bit TrueColor ANSI escape codes, joined into a single line.
+Antigravity CLI runs your configured `statusLine` command and pipes session state JSON to `stdin`. `antigravity-status` parses the payload with `jq` and renders each active segment using 24-bit TrueColor ANSI escape codes, joined into a single line.
 
 > **Requires a TrueColor terminal.** Most modern terminals qualify: Ghostty, Kitty, WezTerm, Alacritty, iTerm2, Warp, and Windows Terminal all work out of the box.
 
@@ -32,35 +32,35 @@ Antigravity CLI runs your configured `statusLine` command and pipes session stat
 Add to your `~/.zshrc`:
 
 ```zsh
-zinit light antigravity-contrib/agy-status
+zinit light antigravity-contrib/antigravity-status
 ```
 
 ### Using Nix flakes
 
 ```sh
-nix profile install github:antigravity-contrib/agy-status
+nix profile install github:antigravity-contrib/antigravity-status
 ```
 
 Or in your `flake.nix` inputs:
 
 ```nix
-inputs.agy-status.url = "github:antigravity-contrib/agy-status";
+inputs.antigravity-status.url = "github:antigravity-contrib/antigravity-status";
 ```
 
 ### Manual (zsh)
 
 ```zsh
-git clone https://github.com/antigravity-contrib/agy-status ~/.local/share/agy-status
-echo 'source ~/.local/share/agy-status/agy-status.plugin.zsh' >> ~/.zshrc
-source ~/.local/share/agy-status/agy-status.plugin.zsh
+git clone https://github.com/antigravity-contrib/antigravity-status ~/.local/share/antigravity-status
+echo 'source ~/.local/share/antigravity-status/antigravity-status.plugin.zsh' >> ~/.zshrc
+source ~/.local/share/antigravity-status/antigravity-status.plugin.zsh
 ```
 
 ### Manual (bash)
 
 ```bash
-git clone https://github.com/antigravity-contrib/agy-status ~/.local/share/agy-status
-echo 'export PATH="$HOME/.local/share/agy-status:$PATH"' >> ~/.bashrc
-export PATH="$HOME/.local/share/agy-status:$PATH"
+git clone https://github.com/antigravity-contrib/antigravity-status ~/.local/share/antigravity-status
+echo 'export PATH="$HOME/.local/share/antigravity-status:$PATH"' >> ~/.bashrc
+export PATH="$HOME/.local/share/antigravity-status:$PATH"
 ```
 
 ### Configure Antigravity CLI
@@ -71,7 +71,7 @@ Set the status line command in `~/.gemini/antigravity-cli/settings.json`:
 {
   "statusLine": {
     "type": "command",
-    "command": "agy-status"
+    "command": "antigravity-status"
   }
 }
 ```
@@ -100,10 +100,10 @@ Each segment is independently styled and only shown when relevant:
 
 | Variable | Values | Default | Description |
 | --- | --- | --- | --- |
-| `AGY_STATUS_THEME` | `catppuccin-mocha` \| `catppuccin-macchiato` \| `catppuccin-frappe` \| `catppuccin-latte` \| `/path/to/custom.json` | `catppuccin-mocha` | Built-in [Catppuccin](https://catppuccin.com) theme or absolute path to a custom theme JSON file |
+| `ANTIGRAVITY_STATUS_THEME` | `catppuccin-mocha` \| `catppuccin-macchiato` \| `catppuccin-frappe` \| `catppuccin-latte` \| `/path/to/custom.json` | `catppuccin-mocha` | Built-in [Catppuccin](https://catppuccin.com) theme or absolute path to a custom theme JSON file |
 
 ```sh
-export AGY_STATUS_THEME=catppuccin-latte
+export ANTIGRAVITY_STATUS_THEME=catppuccin-latte
 ```
 
 ## License

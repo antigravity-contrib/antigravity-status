@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# agy-status — Antigravity CLI (agy) status line
+# antigravity-status — Antigravity CLI (agy) status line
 # Requires: jq
 
 set -euo pipefail
@@ -26,19 +26,19 @@ parse_input() {
   task_count=0
 
   local parsed
-  parsed=$(jq -r -f "$_source_dir/queries/agy-status.jq" <<<"$_input" 2>/dev/null || true)
+  parsed=$(jq -r -f "$_source_dir/queries/antigravity-status.jq" <<<"$_input" 2>/dev/null || true)
   if [ -n "$parsed" ]; then
     eval "$parsed"
   fi
 }
 
 # ── Theme ────────────────────────────────────────────────────────────────────
-# Set AGY_STATUS_THEME to a built-in name (catppuccin-mocha,
+# Set ANTIGRAVITY_STATUS_THEME to a built-in name (catppuccin-mocha,
 # catppuccin-macchiato, catppuccin-frappe, catppuccin-latte) or a path to a
 # custom theme JSON file.
 # Default: catppuccin-mocha
 
-_theme="${AGY_STATUS_THEME:-catppuccin-mocha}"
+_theme="${ANTIGRAVITY_STATUS_THEME:-catppuccin-mocha}"
 if [[ "$_theme" != */* ]]; then
   _theme="$_source_dir/themes/${_theme}.json"
 fi
@@ -49,7 +49,7 @@ theme_model_fg="" theme_dir_fg="" theme_branch_fg="" theme_worktree_fg=""
 theme_diff_add_fg="" theme_diff_del_fg="" theme_context_bar_fg=""
 theme_docker_fg="" theme_nix_fg=""
 
-eval "$(jq -r -f "$_source_dir/queries/agy-theme.jq" "$_theme")"
+eval "$(jq -r -f "$_source_dir/queries/antigravity-theme.jq" "$_theme")"
 readonly theme_sep_fg theme_muted_fg theme_cost_fg theme_agent_fg \
   theme_model_fg theme_dir_fg theme_branch_fg theme_worktree_fg \
   theme_diff_add_fg theme_diff_del_fg theme_context_bar_fg \

@@ -1,16 +1,16 @@
 #!/usr/bin/env bats
 
-SCRIPT="${BATS_TEST_DIRNAME}/../agy-status"
+SCRIPT="${BATS_TEST_DIRNAME}/../antigravity-status"
 
 strip_ansi() {
   sed 's/\x1b\[[0-9;]*m//g'
 }
 
-@test "agy-status plugin file exists" {
-  [ -f "${BATS_TEST_DIRNAME}/../agy-status.plugin.zsh" ]
+@test "antigravity-status plugin file exists" {
+  [ -f "${BATS_TEST_DIRNAME}/../antigravity-status.plugin.zsh" ]
 }
 
-@test "agy-status script is executable" {
+@test "antigravity-status script is executable" {
   [ -x "$SCRIPT" ]
 }
 
@@ -52,8 +52,8 @@ strip_ansi() {
   [[ "$plain" == *"tmp"* ]]
 }
 
-@test "supports switching Catppuccin themes via AGY_STATUS_THEME" {
-  run env AGY_STATUS_THEME=catppuccin-latte bash -c "'$SCRIPT' <<< '{\"model\":{\"display_name\":\"Gemini\"},\"workspace\":{\"current_dir\":\"/tmp\"}}'"
+@test "supports switching Catppuccin themes via ANTIGRAVITY_STATUS_THEME" {
+  run env ANTIGRAVITY_STATUS_THEME=catppuccin-latte bash -c "'$SCRIPT' <<< '{\"model\":{\"display_name\":\"Gemini\"},\"workspace\":{\"current_dir\":\"/tmp\"}}'"
   [ "$status" -eq 0 ]
   # catppuccin-latte model_fg is 23;146;153
   [[ "$output" == *"38;2;23;146;153mGemini"* ]]
