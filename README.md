@@ -2,8 +2,8 @@
 
 > A live [Google Antigravity CLI (`agy`)](https://antigravity.google) status line for your terminal — context usage, cost, model, mode, sandbox, branch, worktree, and more.
 
-[![CI](https://github.com/agy-contrib/agy-status/actions/workflows/ci.yml/badge.svg)](https://github.com/agy-contrib/agy-status/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/release/agy-contrib/agy-status)](https://github.com/agy-contrib/agy-status/releases/latest)
+[![CI](https://github.com/antigravity-contrib/agy-status/actions/workflows/ci.yml/badge.svg)](https://github.com/antigravity-contrib/agy-status/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/antigravity-contrib/agy-status)](https://github.com/antigravity-contrib/agy-status/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 Antigravity CLI's `statusLine` command fires whenever agent state changes — piping a JSON payload of session telemetry to `stdin`. `agy-status` turns that stream into a compact, Catppuccin-colored status line matching [`claude-contrib/claude-status`](https://github.com/claude-contrib/claude-status).
@@ -32,25 +32,25 @@ Antigravity CLI runs your configured `statusLine` command and pipes session stat
 Add to your `~/.zshrc`:
 
 ```zsh
-zinit light agy-contrib/agy-status
+zinit light antigravity-contrib/agy-status
 ```
 
 ### Using Nix flakes
 
 ```sh
-nix profile install github:agy-contrib/agy-status
+nix profile install github:antigravity-contrib/agy-status
 ```
 
 Or in your `flake.nix` inputs:
 
 ```nix
-inputs.agy-status.url = "github:agy-contrib/agy-status";
+inputs.agy-status.url = "github:antigravity-contrib/agy-status";
 ```
 
 ### Manual (zsh)
 
 ```zsh
-git clone https://github.com/agy-contrib/agy-status ~/.local/share/agy-status
+git clone https://github.com/antigravity-contrib/agy-status ~/.local/share/agy-status
 echo 'source ~/.local/share/agy-status/agy-status.plugin.zsh' >> ~/.zshrc
 source ~/.local/share/agy-status/agy-status.plugin.zsh
 ```
@@ -58,7 +58,7 @@ source ~/.local/share/agy-status/agy-status.plugin.zsh
 ### Manual (bash)
 
 ```bash
-git clone https://github.com/agy-contrib/agy-status ~/.local/share/agy-status
+git clone https://github.com/antigravity-contrib/agy-status ~/.local/share/agy-status
 echo 'export PATH="$HOME/.local/share/agy-status:$PATH"' >> ~/.bashrc
 export PATH="$HOME/.local/share/agy-status:$PATH"
 ```
