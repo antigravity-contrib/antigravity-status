@@ -1,0 +1,264 @@
+#!/usr/bin/env bash
+# agy-status — Antigravity CLI (agy) status line
+# Requires: jq
+
+set -euo pipefail
+
+# Capture stdin immediately before any subcommand can consume it
+_input=$(cat)
+# Resolve the directory containing this script, following symlinks (e.g. ~/.local/bin)
+_source_dir=$(dirname "$(realpath "${BASH_SOURCE[0]}")")
+
+# parse_input
+#
+# Parses the Antigravity CLI JSON status payload into global variables via eval.
+# Reads from $_input captured at startup.
+parse_input() {
+  agy_model="?"
+  current_dir="."
+  cost_usd=""
+  context_used=0
+  agy_agent=""
+  cycle_mode=""
+  sandbox_enabled="false"
+  vim_mode=""
+  running_subagents=0
+  task_count=0
+
+  local parsed
+  parsed=$(jq -r -f "$_source_dir/queries/agy-status.jq" <<<"$_input" 2>/dev/null || true)
+  if [ -n "$parsed" ]; then
+    eval "$parsed"
+  fi
+}
+
+# ── Theme ────────────────────────────────────────────────────────────────────
+# Set AGY_STATUS_THEME to a built-in name (catppuccin-mocha,
+# catppuccin-macchiato, catppuccin-frappe, catppuccin-latte) or a path to a
+# custom theme JSON file.
+# Default: catppuccin-mocha
+
+_theme="${AGY_STATUS_THEME:-catppuccin-mocha}"
+if [[ "$_theme" != */* ]]; then
+  _theme="$_source_dir/themes/${_theme}.json"
+fi
+
+# shellcheck disable=SC2034
+theme_sep_fg="" theme_muted_fg="" theme_cost_fg="" theme_agent_fg=""
+theme_model_fg="" theme_dir_fg="" theme_branch_fg="" theme_worktree_fg=""
+theme_diff_add_fg="" theme_diff_del_fg="" theme_context_bar_fg=""
+theme_docker_fg="" theme_nix_fg=""
+
+eval "$(jq -r -f "$_source_dir/queries/agy-theme.jq" "$_theme")"
+readonly theme_sep_fg theme_muted_fg theme_cost_fg theme_agent_fg \
+  theme_model_fg theme_dir_fg theme_branch_fg theme_worktree_fg \
+  theme_diff_add_fg theme_diff_del_fg theme_context_bar_fg \
+  theme_docker_fg theme_nix_fg
+
+# ── Color helper ─────────────────────────────────────────────────────────────
+
+_printf_color() {
+  printf '\033[38;2;%sm%s\033[0m' "$1" "$2"
+}
+
+# ── Segments ─────────────────────────────────────────────────────────────────
+
+context_segment() {
+  local bar_width=10
+  local filled=$((context_used * bar_width / 100))
+  if [ "$filled" -gt "$bar_width" ]; then
+    filled="$bar_width"
+  elif [ "$filled" -lt 0 ]; then
+    filled=0
+  fi
+  local empty=$((bar_width - filled))
+  local bar_on="" bar_off="" bar_fg i
+
+  for ((i = 0; i < filled; i++)); do bar_on+='⣿'; done
+  for ((i = 0; i < empty; i++)); do bar_off+='⣿'; done
+
+  if [ "$context_used" -ge 90 ]; then
+    bar_fg="$theme_diff_del_fg"
+  elif [ "$context_used" -ge 70 ]; then
+    bar_fg="$theme_context_bar_fg"
+  else
+    bar_fg="$theme_diff_add_fg"
+  fi
+
+  local out=""
+  if [ -n "$bar_on" ]; then out+="$(_printf_color "$bar_fg" "$bar_on")"; fi
+  if [ -n "$bar_off" ]; then out+="$(_printf_color "$theme_sep_fg" "$bar_off")"; fi
+  out+=" $(_printf_color "$theme_muted_fg" "${context_used}%")"
+  printf '%s' "$out"
+}
+
+cost_segment() {
+  if [ -n "$cost_usd" ]; then
+    local cost_fmt
+    cost_fmt=$(printf '$%.2f' "$cost_usd")
+    _printf_color "$theme_cost_fg" "$cost_fmt"
+  fi
+}
+
+model_segment() {
+  _printf_color "$theme_model_fg" "$agy_model"
+}
+
+agent_segment() {
+  if [ -n "$agy_agent" ]; then
+    _printf_color "$theme_agent_fg" "⚡ $agy_agent"
+  fi
+}
+
+mode_segment() {
+  if [ -n "$cycle_mode" ]; then
+    _printf_color "$theme_worktree_fg" "$cycle_mode"
+  fi
+}
+
+sandbox_segment() {
+  if [ "$sandbox_enabled" = "true" ]; then
+    _printf_color "$theme_diff_add_fg" "󰒃"
+  fi
+}
+
+vim_segment() {
+  if [ -n "$vim_mode" ]; then
+    _printf_color "$theme_muted_fg" "$vim_mode"
+  fi
+}
+
+activity_segment() {
+  local parts=()
+  if [ "$running_subagents" -gt 0 ]; then
+    parts+=("$(_printf_color "$theme_agent_fg" "⚡${running_subagents}")")
+  fi
+  if [ "$task_count" -gt 0 ]; then
+    parts+=("$(_printf_color "$theme_muted_fg" "󱑓 ${task_count}")")
+  fi
+  if [ "${#parts[@]}" -gt 0 ]; then
+    local IFS=' '
+    printf '%s' "${parts[*]}"
+  fi
+}
+
+dir_segment() {
+  local dir_name="${current_dir##*/}"
+  if [ -z "$dir_name" ]; then dir_name="/"; fi
+  _printf_color "$theme_dir_fg" "  ${dir_name}"
+}
+
+_shorten_branch() {
+  local branch="$1"
+  if [ "${#branch}" -le 30 ]; then
+    printf '%s' "$branch"
+    return
+  fi
+  local IFS='/'
+  read -ra parts <<<"$branch"
+  local count="${#parts[@]}"
+  if [ "$count" -gt 2 ]; then
+    printf '%s/…/%s' "${parts[0]}" "${parts[$((count - 1))]}"
+  else
+    printf '%s' "$branch"
+  fi
+}
+
+branch_segment() {
+  local branch
+  branch=$(git -C "$current_dir" branch --show-current 2>/dev/null || true)
+  if [ -n "$branch" ]; then
+    _printf_color "$theme_branch_fg" "  $(_shorten_branch "$branch")"
+  fi
+}
+
+worktree_segment() {
+  local git_dir git_common_dir worktree_name=""
+  git_dir=$(git -C "$current_dir" rev-parse --git-dir 2>/dev/null || true)
+  git_common_dir=$(git -C "$current_dir" rev-parse --git-common-dir 2>/dev/null || true)
+  if [ -n "$git_dir" ] && [ -n "$git_common_dir" ] &&
+    [ "$(realpath "$git_dir" 2>/dev/null || true)" != \
+      "$(realpath "$git_common_dir" 2>/dev/null || true)" ]; then
+    local toplevel
+    toplevel=$(git -C "$current_dir" rev-parse --show-toplevel 2>/dev/null || true)
+    if [ -n "$toplevel" ]; then worktree_name=$(basename "$toplevel"); fi
+  fi
+  if [ -n "$worktree_name" ]; then
+    _printf_color "$theme_worktree_fg" "󰙅  $worktree_name"
+  fi
+}
+
+docker_segment() {
+  local in_docker=false
+  if [ -f /.dockerenv ]; then
+    in_docker=true
+  elif grep -q docker /proc/self/cgroup 2>/dev/null; then
+    in_docker=true
+  elif [ "${container:-}" = "docker" ]; then
+    in_docker=true
+  fi
+  if [ "$in_docker" = true ]; then
+    _printf_color "$theme_docker_fg" "  docker"
+  fi
+}
+
+nix_segment() {
+  if [ -z "${IN_NIX_SHELL:-}" ]; then return; fi
+
+  local nix_type dir is_flake label
+  if [ "${IN_NIX_SHELL}" = "pure" ]; then
+    nix_type="pure"
+  else
+    dir="$current_dir"
+    is_flake=false
+    while [ "$dir" != "/" ] && [ "$dir" != "." ]; do
+      if [ -f "$dir/flake.nix" ]; then
+        is_flake=true
+        break
+      fi
+      dir=$(dirname "$dir")
+    done
+    if [ "$is_flake" = true ]; then nix_type="flake"; else nix_type="nix-shell"; fi
+  fi
+
+  if [ -n "${name:-}" ]; then
+    label="$nix_type · ${name}"
+  else
+    label="$nix_type"
+  fi
+  _printf_color "$theme_nix_fg" "  $label"
+}
+
+main() {
+  parse_input
+
+  local sep
+  sep=$(_printf_color "$theme_sep_fg" "  ")
+
+  local segments=()
+  segments+=("$(context_segment)")
+
+  local cost
+  cost=$(cost_segment)
+  if [ -n "$cost" ]; then segments+=("$sep" "$cost"); fi
+
+  segments+=("$sep" "$(model_segment)")
+
+  local part fn
+  for fn in agent_segment mode_segment sandbox_segment vim_segment activity_segment; do
+    part=$("$fn")
+    if [ -n "$part" ]; then segments+=("$sep" "$part"); fi
+  done
+
+  segments+=("$sep" "$(dir_segment)")
+
+  for fn in branch_segment worktree_segment docker_segment nix_segment; do
+    part=$("$fn")
+    if [ -n "$part" ]; then segments+=("$sep" "$part"); fi
+  done
+
+  printf '%s' "${segments[@]}"
+  printf '\n'
+}
+
+main
